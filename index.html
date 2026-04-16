@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faulkland Village Hall - Book the Hall</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f0eb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c28 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.05em;
+            opacity: 0.9;
+        }
+
+        /* Config Banner */
+        .config-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .config-banner.show {
+            display: block;
+        }
+
+        .config-banner h3 {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .config-banner p {
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        /* Layout */
+        .booking-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        /* Calendar */
+        .calendar-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-nav h2 {
+            font-size: 1.15em;
+            color: #2d5016;
+        }
+
+        .calendar-nav button {
+            background: #4a7c28;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: background 0.2s;
+        }
+
+        .calendar-nav button:hover {
+            background: #2d5016;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+
+        .calendar-grid .day-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.8em;
+            color: #666;
+            padding: 8px 0;
+        }
+
+        .calendar-grid .day {
+            text-align: center;
+            padding: 10px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-grid .day:hover:not(.empty):not(.past) {
+            background: #e8f5e0;
+        }
+
+        .calendar-grid .day.today {
+            font-weight: 700;
+            color: #4a7c28;
+        }
+
+        .calendar-grid .day.selected {
+            background: #4a7c28;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-grid .day.past {
+            color: #ccc;
+            cursor: default;
+        }
+
+        .calendar-grid .day.empty {
+            cursor: default;
+        }
+
+        .calendar-grid .day.has-bookings::after {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: #e67e22;
+            border-radius: 50%;
+            margin: 4px auto 0;
+        }
+
+        .calendar-grid .day.selected.has-bookings::after {
+            background: white;
+        }
+
+        /* Slots Panel */
+        .slots-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .slots-panel h2 {
+            font-size: 1.15em;
+            color: #2d5016;
+            margin-bottom: 4px;
+        }
+
+        .selected-date {
+            font-size: 0.9em;
+            color: #888;
+            margin-bottom: 16px;
+        }
+
+        .no-date-msg {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 0.95em;
+        }
+
+        /* Booking Types */
+        .booking-section {
+            margin-bottom: 16px;
+        }
+
+        .booking-section h3 {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #e8f5e0;
+        }
+
+        .slot-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slot-card:hover:not(.unavailable) {
+            border-color: #4a7c28;
+            background: #f8fcf5;
+        }
+
+        .slot-card.selected {
+            border-color: #4a7c28;
+            background: #e8f5e0;
+        }
+
+        .slot-card.unavailable {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .slot-card .slot-info {
+            flex: 1;
+        }
+
+        .slot-card .slot-time {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .slot-card .slot-desc {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .slot-card .slot-price {
+            font-weight: 700;
+            color: #2d5016;
+            font-size: 1em;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+
+        .slot-card.unavailable .slot-price {
+            color: #999;
+        }
+
+        .slot-card .booked-tag {
+            font-size: 0.75em;
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        /* Hourly slots grid */
+        .hourly-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .hourly-slot {
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+
+        .hourly-slot:hover:not(.unavailable) {
+            border-color: #4a7c28;
+            background: #f8fcf5;
+        }
+
+        .hourly-slot.selected {
+            border-color: #4a7c28;
+            background: #e8f5e0;
+        }
+
+        .hourly-slot.unavailable {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .hourly-slot .h-time {
+            font-weight: 600;
+        }
+
+        .hourly-slot .h-price {
+            font-size: 0.8em;
+            color: #2d5016;
+        }
+
+        /* Rate toggle */
+        .rate-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .rate-btn {
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.82em;
+            transition: all 0.2s;
+        }
+
+        .rate-btn.active {
+            border-color: #4a7c28;
+            background: #e8f5e0;
+            color: #2d5016;
+            font-weight: 600;
+        }
+
+        .rate-btn:hover {
+            border-color: #4a7c28;
+        }
+
+        /* Book Button */
+        .book-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c28 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+
+        .book-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(45,80,22,0.3);
+        }
+
+        .book-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Rates Info */
+        .rates-info {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-top: 20px;
+        }
+
+        .rates-info h2 {
+            font-size: 1.15em;
+            color: #2d5016;
+            margin-bottom: 12px;
+        }
+
+        .rates-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .rates-table th {
+            text-align: left;
+            padding: 8px 10px;
+            background: #e8f5e0;
+            color: #2d5016;
+            font-weight: 600;
+        }
+
+        .rates-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .rates-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Notes */
+        .notes {
+            background: #f0f7ec;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 16px;
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .notes strong {
+            color: #2d5016;
+        }
+
+        .notes ul {
+            margin-top: 6px;
+            padding-left: 18px;
+        }
+
+        .notes li {
+            margin-bottom: 4px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding: 16px;
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .footer a {
+            color: #4a7c28;
+            text-decoration: none;
+        }
+
+        /* Loading spinner */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #4a7c28;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Faulkland Village Hall</h1>
+            <p>Book the Hall Online</p>
+        </div>
+
+        <!-- Configuration Banner (shown when API key not set) -->
+        <div class="config-banner" id="configBanner">
+            <h3>Setup Required</h3>
+            <p>This calendar is running in demo mode. To enable live availability from Google Calendar,
+            please configure your API key and Calendar ID in the settings below. See the SETUP guide for instructions.</p>
+        </div>
+
+        <!-- Booking Layout -->
+        <div class="booking-layout">
+            <!-- Calendar -->
+            <div class="calendar-panel">
+                <div class="calendar-nav">
+                    <button onclick="changeMonth(-1)">&larr; Prev</button>
+                    <h2 id="monthTitle"></h2>
+                    <button onclick="changeMonth(1)">Next &rarr;</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+
+            <!-- Slots -->
+            <div class="slots-panel">
+                <h2>Select Your Booking</h2>
+                <div class="selected-date" id="selectedDateLabel"></div>
+                <div id="slotsContainer">
+                    <div class="no-date-msg">Select a date on the calendar to see available slots</div>
+                </div>
+                <button class="book-btn" id="bookBtn" disabled onclick="openBookingForm()">
+                    Select a slot to book
+                </button>
+            </div>
+        </div>
+
+        <!-- Rates Info -->
+        <div class="rates-info">
+            <h2>Hire Fees (from September 2025)</h2>
+            <table class="rates-table">
+                <thead>
+                    <tr>
+                        <th>Usage</th>
+                        <th>Period</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard hire (meetings, classes, lectures, coffee mornings &mdash; limited kitchen use)</td>
+                        <td>Per hour</td>
+                        <td>&pound;6.60</td>
+                    </tr>
+                    <tr>
+                        <td>Full facilities with kitchen/catering (20+ people, parties/events)</td>
+                        <td>Per hour</td>
+                        <td>&pound;7.20</td>
+                    </tr>
+                    <tr>
+                        <td>Block booking &mdash; Morning</td>
+                        <td>8:30 &ndash; 13:00</td>
+                        <td>&pound;27.00</td>
+                    </tr>
+                    <tr>
+                        <td>Block booking &mdash; Afternoon</td>
+                        <td>13:00 &ndash; 17:30</td>
+                        <td>&pound;27.00</td>
+                    </tr>
+                    <tr>
+                        <td>Block booking &mdash; Evening</td>
+                        <td>17:30 &ndash; 23:30</td>
+                        <td>&pound;40.00</td>
+                    </tr>
+                    <tr>
+                        <td>All Day</td>
+                        <td>8:30 &ndash; 23:30</td>
+                        <td>&pound;90.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="notes">
+                <strong>Please note:</strong>
+                <ul>
+                    <li>The hall provides toilet rolls, washing up liquid and cleaning products.</li>
+                    <li>Please bring your own tea towels and other linens.</li>
+                    <li>Only small amounts of rubbish may be left in the dustbin.</li>
+                    <li>If you have used the kitchen with larger amounts of waste, please bag up and take your rubbish home.</li>
+                    <li>Higher hourly rate reflects greater use of products and electricity for larger events.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Faulkland Village Hall &bull; <a href="mailto:villagehallfaulkland@gmail.com">villagehallfaulkland@gmail.com</a></p>
+        </div>
+    </div>
+
+    <script>
+    // ===================================================================
+    // CONFIGURATION - Update these values with your own settings
+    // ===================================================================
+    const CONFIG = {
+        // Google Calendar API Key (from Google Cloud Console - Village Hall Booking project)
+        GOOGLE_API_KEY: 'AIzaSyCFnKTS1_njftAkAMFCHJT37GfSvlqfB3I',
+
+        // Google Calendar ID (villagehallfaulkland@gmail.com primary calendar)
+        GOOGLE_CALENDAR_ID: 'villagehallfaulkland@gmail.com',
+
+        // Google Form pre-fill URL base
+        // Replace with your actual Google Form URL
+        // See SETUP.md for how to get the pre-fill entry IDs
+        GOOGLE_FORM_URL: '',
+
+        // Google Form field entry IDs (from the form's pre-fill link)
+        // These map to the form fields so we can pre-fill them
+        FORM_FIELDS: {
+            date: 'entry.XXXXXXX',        // Booking Date field
+            bookingType: 'entry.XXXXXXX',  // Booking Type dropdown
+            startTime: 'entry.XXXXXXX',    // Start Time field
+            endTime: 'entry.XXXXXXX',      // End Time field
+        }
+    };
+
+    // ===================================================================
+    // IMPORTED BOOKINGS (from Google Calendar export 2026-04-16)
+    // ===================================================================
+    const IMPORTED_BOOKINGS = [
+      { title: 'JP Music (~fortnightly)', start: '2026-04-16T12:30:00', end: '2026-04-16T14:30:00' },
+      { title: 'Gleeson dance rehearsal', start: '2026-04-16T13:30:00', end: '2026-04-16T15:00:00' },
+      { title: 'Children Party', start: '2026-04-19T11:00:00', end: '2026-04-19T16:00:00' },
+      { title: 'Line dance', start: '2026-04-21T18:15:00', end: '2026-04-21T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-04-23T12:30:00', end: '2026-04-23T14:30:00' },
+      { title: 'Line dance', start: '2026-04-28T18:15:00', end: '2026-04-28T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-04-30T12:30:00', end: '2026-04-30T14:30:00' },
+      { title: 'Hunt wedding prep', start: '2026-05-01T11:00:00', end: '2026-05-04T11:00:00' },
+      { title: 'Line dance', start: '2026-05-05T18:15:00', end: '2026-05-05T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-05-07T12:30:00', end: '2026-05-07T14:30:00' },
+      { title: 'VH quiz', start: '2026-05-08T14:00:00', end: '2026-05-08T22:00:00' },
+      { title: 'Clog dancing Vikki', start: '2026-05-09T09:00:00', end: '2026-05-09T15:00:00' },
+      { title: 'Line dance', start: '2026-05-12T18:15:00', end: '2026-05-12T19:45:00' },
+      { title: 'Parish council', start: '2026-05-13T19:30:00', end: '2026-05-13T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-05-14T12:30:00', end: '2026-05-14T14:30:00' },
+      { title: 'Leah dance rehearsal', start: '2026-05-16T09:00:00', end: '2026-05-16T10:00:00' },
+      { title: 'Line dance', start: '2026-05-19T18:15:00', end: '2026-05-19T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-05-21T12:30:00', end: '2026-05-21T14:30:00' },
+      { title: 'Line dance', start: '2026-05-26T18:15:00', end: '2026-05-26T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-05-28T12:30:00', end: '2026-05-28T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-06-04T12:30:00', end: '2026-06-04T14:30:00' },
+      { title: 'Line dance', start: '2026-06-09T18:15:00', end: '2026-06-09T19:45:00' },
+      { title: 'Parish council', start: '2026-06-10T19:30:00', end: '2026-06-10T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-06-11T12:30:00', end: '2026-06-11T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-06-18T12:30:00', end: '2026-06-18T14:30:00' },
+      { title: 'Line dance', start: '2026-06-23T18:15:00', end: '2026-06-23T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-06-25T12:30:00', end: '2026-06-25T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-07-02T12:30:00', end: '2026-07-02T14:30:00' },
+      { title: 'Line dance', start: '2026-07-07T18:15:00', end: '2026-07-07T19:45:00' },
+      { title: 'Parish council', start: '2026-07-08T19:30:00', end: '2026-07-08T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-07-09T12:30:00', end: '2026-07-09T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-07-16T12:30:00', end: '2026-07-16T14:30:00' },
+      { title: 'Line dance', start: '2026-07-21T18:15:00', end: '2026-07-21T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-07-23T12:30:00', end: '2026-07-23T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-07-30T12:30:00', end: '2026-07-30T14:30:00' },
+      { title: 'Line dance', start: '2026-08-04T18:15:00', end: '2026-08-04T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-08-06T12:30:00', end: '2026-08-06T14:30:00' },
+      { title: 'Wedding set up', start: '2026-08-07T13:00:00', end: '2026-08-07T21:00:00' },
+      { title: 'Wedding Kimberly Steve', start: '2026-08-08T00:00:00', end: '2026-08-09T00:00:00' },
+      { title: 'Wedding clear up', start: '2026-08-09T08:00:00', end: '2026-08-09T11:00:00' },
+      { title: 'Parish council', start: '2026-08-12T19:30:00', end: '2026-08-12T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-08-13T12:30:00', end: '2026-08-13T14:30:00' },
+      { title: 'Line dance', start: '2026-08-18T18:15:00', end: '2026-08-18T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-08-20T12:30:00', end: '2026-08-20T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-08-27T12:30:00', end: '2026-08-27T14:30:00' },
+      { title: 'Line dance', start: '2026-09-01T18:15:00', end: '2026-09-01T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-09-03T12:30:00', end: '2026-09-03T14:30:00' },
+      { title: 'Parish council', start: '2026-09-09T19:30:00', end: '2026-09-09T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-09-10T12:30:00', end: '2026-09-10T14:30:00' },
+      { title: 'Line dance', start: '2026-09-15T18:15:00', end: '2026-09-15T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-09-17T12:30:00', end: '2026-09-17T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-09-24T12:30:00', end: '2026-09-24T14:30:00' },
+      { title: 'Line dance', start: '2026-09-29T18:15:00', end: '2026-09-29T19:45:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-10-01T12:30:00', end: '2026-10-01T14:30:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-10-08T12:30:00', end: '2026-10-08T14:30:00' },
+      { title: 'Line dance', start: '2026-10-13T18:15:00', end: '2026-10-13T19:45:00' },
+      { title: 'Parish council', start: '2026-10-14T19:30:00', end: '2026-10-14T21:00:00' },
+      { title: 'JP Music (~fortnightly)', start: '2026-10-15T12:30:00', end: '2026-10-15T14:30:00' },
+    ];
+
+    // ===================================================================
+    // STATE
+    // ===================================================================
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let selectedDate = null;
+    let selectedSlot = null;
+    let hourlyRate = 'standard'; // 'standard' or 'full'
+    // Pre-populate with imported bookings
+    let bookedSlots = IMPORTED_BOOKINGS.slice();
+
+    // ===================================================================
+    // RATES
+    // ===================================================================
+    const RATES = {
+        standard: 6.60,
+        full: 7.20,
+        blockMorning: 27.00,
+        blockAfternoon: 27.00,
+        blockEvening: 40.00,
+        allDay: 90.00
+    };
+
+    // Hourly slot definitions (start times)
+    const HOURLY_STARTS = [];
+    for (let h = 8; h <= 22; h++) {
+        if (h === 8) {
+            HOURLY_STARTS.push({ hour: 8, min: 30, label: '8:30 - 9:30' });
+        } else {
+            const end = h + 1;
+            HOURLY_STARTS.push({ hour: h, min: 0, label: `${h}:00 - ${end}:00` });
+        }
+    }
+    // Add final slot
+    HOURLY_STARTS.push({ hour: 23, min: 0, label: '23:00 - 23:30' });
+
+    // Block slot definitions
+    const BLOCK_SLOTS = [
+        { id: 'blockMorning', label: 'Morning Session', time: '8:30 - 13:00', start: '08:30', end: '13:00', price: RATES.blockMorning },
+        { id: 'blockAfternoon', label: 'Afternoon Session', time: '13:00 - 17:30', start: '13:00', end: '17:30', price: RATES.blockAfternoon },
+        { id: 'blockEvening', label: 'Evening Session', time: '17:30 - 23:30', start: '17:30', end: '23:30', price: RATES.blockEvening },
+        { id: 'allDay', label: 'All Day Hire', time: '8:30 - 23:30', start: '08:30', end: '23:30', price: RATES.allDay },
+    ];
+
+    // ===================================================================
+    // CALENDAR RENDERING
+    // ===================================================================
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        const title = document.getElementById('monthTitle');
+        title.textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+
+        let html = DAYS.map(d => `<div class="day-header">${d}</div>`).join('');
+
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        // getDay: 0=Sun. We want Mon=0
+        let startDay = firstDay.getDay() - 1;
+        if (startDay < 0) startDay = 6;
+
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        // Empty cells before first day
+        for (let i = 0; i < startDay; i++) {
+            html += '<div class="day empty"></div>';
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(currentYear, currentMonth, d);
+            date.setHours(0,0,0,0);
+            const isPast = date < today;
+            const isToday = date.getTime() === today.getTime();
+            const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
+            const hasBookings = hasBookingsOnDate(date);
+
+            let classes = 'day';
+            if (isPast) classes += ' past';
+            if (isToday) classes += ' today';
+            if (isSelected) classes += ' selected';
+            if (hasBookings) classes += ' has-bookings';
+
+            if (isPast) {
+                html += `<div class="${classes}">${d}</div>`;
+            } else {
+                html += `<div class="${classes}" onclick="selectDate(${currentYear}, ${currentMonth}, ${d})">${d}</div>`;
+            }
+        }
+
+        grid.innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+        currentMonth += delta;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar();
+    }
+
+    function selectDate(year, month, day) {
+        selectedDate = new Date(year, month, day);
+        selectedDate.setHours(0,0,0,0);
+        selectedSlot = null;
+        renderCalendar();
+        fetchAndRenderSlots();
+    }
+
+    // ===================================================================
+    // GOOGLE CALENDAR INTEGRATION
+    // ===================================================================
+    function hasBookingsOnDate(date) {
+        return bookedSlots.some(evt => {
+            const evtStart = new Date(evt.start);
+            const evtEnd = new Date(evt.end);
+            evtStart.setHours(0,0,0,0);
+            evtEnd.setHours(0,0,0,0);
+            return date >= evtStart && date <= evtEnd;
+        });
+    }
+
+    async function fetchEventsForDate(date) {
+        if (!CONFIG.GOOGLE_API_KEY || !CONFIG.GOOGLE_CALENDAR_ID) {
+            // Return matching imported bookings for this date
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+            return IMPORTED_BOOKINGS.filter(evt => {
+                const evtStart = new Date(evt.start);
+                const evtEnd = new Date(evt.end);
+                return evtStart < dayEnd && evtEnd > dayStart;
+            });
+        }
+
+        const timeMin = new Date(date);
+        timeMin.setHours(0, 0, 0, 0);
+        const timeMax = new Date(date);
+        timeMax.setHours(23, 59, 59, 999);
+
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CONFIG.GOOGLE_CALENDAR_ID)}/events?` +
+            `key=${CONFIG.GOOGLE_API_KEY}` +
+            `&timeMin=${timeMin.toISOString()}` +
+            `&timeMax=${timeMax.toISOString()}` +
+            `&singleEvents=true` +
+            `&orderBy=startTime`;
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Calendar API error');
+            const data = await res.json();
+            return (data.items || []).map(evt => ({
+                title: evt.summary || 'Booked',
+                start: evt.start.dateTime || evt.start.date,
+                end: evt.end.dateTime || evt.end.date,
+            }));
+        } catch (err) {
+            console.warn('Could not fetch calendar events:', err);
+            return [];
+        }
+    }
+
+    async function fetchEventsForMonth() {
+        if (!CONFIG.GOOGLE_API_KEY || !CONFIG.GOOGLE_CALENDAR_ID) {
+            // No API configured — use imported bookings (already loaded into bookedSlots)
+            renderCalendar();
+            return;
+        }
+
+        const timeMin = new Date(currentYear, currentMonth, 1);
+        const timeMax = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CONFIG.GOOGLE_CALENDAR_ID)}/events?` +
+            `key=${CONFIG.GOOGLE_API_KEY}` +
+            `&timeMin=${timeMin.toISOString()}` +
+            `&timeMax=${timeMax.toISOString()}` +
+            `&singleEvents=true` +
+            `&orderBy=startTime`;
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Calendar API error');
+            const data = await res.json();
+            bookedSlots = (data.items || []).map(evt => ({
+                title: evt.summary || 'Booked',
+                start: evt.start.dateTime || evt.start.date,
+                end: evt.end.dateTime || evt.end.date,
+            }));
+            renderCalendar();
+        } catch (err) {
+            console.warn('Could not fetch calendar events:', err);
+        }
+    }
+
+    function isSlotBooked(date, startHour, startMin, endHour, endMin) {
+        const slotStart = new Date(date);
+        slotStart.setHours(startHour, startMin, 0, 0);
+        const slotEnd = new Date(date);
+        slotEnd.setHours(endHour, endMin, 0, 0);
+
+        return bookedSlots.some(evt => {
+            const evtStart = new Date(evt.start);
+            const evtEnd = new Date(evt.end);
+            // Overlap check: slot overlaps if slotStart < evtEnd AND slotEnd > evtStart
+            return slotStart < evtEnd && slotEnd > evtStart;
+        });
+    }
+
+    // ===================================================================
+    // SLOT RENDERING
+    // ===================================================================
+    async function fetchAndRenderSlots() {
+        const container = document.getElementById('slotsContainer');
+        const label = document.getElementById('selectedDateLabel');
+
+        if (!selectedDate) {
+            container.innerHTML = '<div class="no-date-msg">Select a date on the calendar to see available slots</div>';
+            return;
+        }
+
+        const dateStr = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        label.textContent = dateStr;
+
+        // Show loading while fetching
+        container.innerHTML = '<div class="loading">Checking availability</div>';
+
+        // Fetch events for the selected date
+        const events = await fetchEventsForDate(selectedDate);
+        // Update bookedSlots for this date
+        events.forEach(evt => {
+            if (!bookedSlots.find(b => b.start === evt.start && b.end === evt.end)) {
+                bookedSlots.push(evt);
+            }
+        });
+
+        renderSlots();
+    }
+
+    function renderSlots() {
+        const container = document.getElementById('slotsContainer');
+
+        let html = '';
+
+        // --- Block Bookings ---
+        html += '<div class="booking-section">';
+        html += '<h3>Block Bookings &amp; All Day</h3>';
+
+        BLOCK_SLOTS.forEach(slot => {
+            const [sh, sm] = slot.start.split(':').map(Number);
+            const [eh, em] = slot.end.split(':').map(Number);
+            const booked = isSlotBooked(selectedDate, sh, sm, eh, em);
+            const isSelected = selectedSlot && selectedSlot.id === slot.id;
+
+            html += `<div class="slot-card ${booked ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}"
+                          onclick="${booked ? '' : `selectSlot('${slot.id}')`}">
+                <div class="slot-info">
+                    <div class="slot-time">${slot.label}</div>
+                    <div class="slot-desc">${slot.time}</div>
+                </div>
+                <div class="slot-price">&pound;${slot.price.toFixed(2)}</div>
+                ${booked ? '<span class="booked-tag">Booked</span>' : ''}
+            </div>`;
+        });
+
+        html += '</div>';
+
+        // --- Hourly Bookings ---
+        html += '<div class="booking-section">';
+        html += '<h3>Hourly Bookings</h3>';
+
+        // Rate toggle
+        html += `<div class="rate-toggle">
+            <div class="rate-btn ${hourlyRate === 'standard' ? 'active' : ''}" onclick="setHourlyRate('standard')">
+                Standard &pound;6.60/hr<br><small>Limited kitchen</small>
+            </div>
+            <div class="rate-btn ${hourlyRate === 'full' ? 'active' : ''}" onclick="setHourlyRate('full')">
+                Full facilities &pound;7.20/hr<br><small>Kitchen &amp; catering</small>
+            </div>
+        </div>`;
+
+        const rate = hourlyRate === 'standard' ? RATES.standard : RATES.full;
+
+        html += '<div class="hourly-grid">';
+        HOURLY_STARTS.forEach((slot, idx) => {
+            let endH, endM;
+            if (idx === HOURLY_STARTS.length - 1) {
+                endH = 23; endM = 30;
+            } else {
+                endH = slot.hour + 1; endM = slot.min;
+            }
+            const booked = isSlotBooked(selectedDate, slot.hour, slot.min, endH, endM);
+            const slotId = `hourly_${slot.hour}_${slot.min}`;
+            const isSelected = selectedSlot && selectedSlot.id === slotId;
+
+            html += `<div class="hourly-slot ${booked ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}"
+                          onclick="${booked ? '' : `selectHourlySlot(${slot.hour}, ${slot.min}, ${endH}, ${endM}, '${slot.label}')`}">
+                <div class="h-time">${slot.label}</div>
+                <div class="h-price">${booked ? 'Booked' : '&pound;' + rate.toFixed(2)}</div>
+            </div>`;
+        });
+        html += '</div>';
+        html += '</div>';
+
+        container.innerHTML = html;
+        updateBookButton();
+    }
+
+    function selectSlot(slotId) {
+        const slot = BLOCK_SLOTS.find(s => s.id === slotId);
+        if (!slot) return;
+
+        selectedSlot = {
+            id: slot.id,
+            label: slot.label,
+            time: slot.time,
+            start: slot.start,
+            end: slot.end,
+            price: slot.price,
+            type: slot.label
+        };
+
+        renderSlots();
+    }
+
+    function selectHourlySlot(startH, startM, endH, endM, label) {
+        const rate = hourlyRate === 'standard' ? RATES.standard : RATES.full;
+        const rateLabel = hourlyRate === 'standard' ? 'Standard' : 'Full Facilities';
+        const startStr = `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`;
+        const endStr = `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`;
+
+        selectedSlot = {
+            id: `hourly_${startH}_${startM}`,
+            label: `Hourly - ${rateLabel}`,
+            time: label,
+            start: startStr,
+            end: endStr,
+            price: rate,
+            type: `Hourly ${rateLabel}`
+        };
+
+        renderSlots();
+    }
+
+    function setHourlyRate(rate) {
+        hourlyRate = rate;
+        // If an hourly slot was selected, update its price
+        if (selectedSlot && selectedSlot.id.startsWith('hourly_')) {
+            selectedSlot.price = rate === 'standard' ? RATES.standard : RATES.full;
+            selectedSlot.type = `Hourly ${rate === 'standard' ? 'Standard' : 'Full Facilities'}`;
+            selectedSlot.label = `Hourly - ${rate === 'standard' ? 'Standard' : 'Full Facilities'}`;
+        }
+        renderSlots();
+    }
+
+    function updateBookButton() {
+        const btn = document.getElementById('bookBtn');
+        if (selectedSlot) {
+            btn.disabled = false;
+            btn.textContent = `Book ${selectedSlot.label} (${selectedSlot.time}) - \u00A3${selectedSlot.price.toFixed(2)}`;
+        } else {
+            btn.disabled = true;
+            btn.textContent = 'Select a slot to book';
+        }
+    }
+
+    // ===================================================================
+    // GOOGLE FORM INTEGRATION
+    // ===================================================================
+    function openBookingForm() {
+        if (!selectedDate || !selectedSlot) return;
+
+        const dateStr = selectedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+        if (CONFIG.GOOGLE_FORM_URL) {
+            // Build pre-filled form URL
+            const params = new URLSearchParams();
+            params.set(CONFIG.FORM_FIELDS.date, dateStr);
+            params.set(CONFIG.FORM_FIELDS.bookingType, selectedSlot.type);
+            params.set(CONFIG.FORM_FIELDS.startTime, selectedSlot.start);
+            params.set(CONFIG.FORM_FIELDS.endTime, selectedSlot.end);
+
+            const url = `${CONFIG.GOOGLE_FORM_URL}?${params.toString()}`;
+            window.open(url, '_blank');
+        } else {
+            // No form configured - show mailto fallback
+            const subject = encodeURIComponent(`Hall Booking Request - ${dateStr}`);
+            const body = encodeURIComponent(
+                `I would like to book Faulkland Village Hall:\n\n` +
+                `Date: ${dateStr}\n` +
+                `Booking Type: ${selectedSlot.type}\n` +
+                `Time: ${selectedSlot.time}\n` +
+                `Estimated Cost: \u00A3${selectedSlot.price.toFixed(2)}\n\n` +
+                `Name: \n` +
+                `Phone: \n` +
+                `Email: \n` +
+                `Number of Attendees: \n` +
+                `Purpose/Event: \n` +
+                `Kitchen Use Required: Yes / No\n` +
+                `Special Requirements: \n`
+            );
+            window.open(`mailto:villagehallfaulkland@gmail.com?subject=${subject}&body=${body}`, '_blank');
+        }
+    }
+
+    // ===================================================================
+    // INIT
+    // ===================================================================
+    renderCalendar();
+    fetchEventsForMonth();
+    </script>
+</body>
+</html>
